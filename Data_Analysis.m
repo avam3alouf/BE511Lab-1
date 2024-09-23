@@ -1,7 +1,17 @@
 clear, close all
 
 temps = readtable("num1_analysisdat.csv");
-E_r1 = readtable("Lab1_0_trial1.xlsx");
+
+part_E_dat = struct("Lab1_0_trial1",readtable("Lab1_0_trial1.xlsx"), ...
+    "Lab1_0_trial2",readtable("Lab1_0_trial2.xlsx"), ...
+    "Lab1_0",readtable("Lab1_0.xlsx"), ...
+    "Lab1_1_trial1", readtable("Lab1_1_trial1.xlsx"), ...
+    "Lab1_1_trial2", readtable("Lab1_1_trial2.xlsx"), ...
+    "Lab1_1", readtable("Lab1_1.xlsx"), ...
+    "Lab1_2_trial1",readtable("Lab1_2_trial1.xlsx"), ...
+    "Lab1_2_trial2",readtable("Lab1_2_trial2.xlsx"), ...
+    "Lab1_2",readtable("Lab1_2.xlsx"));
+
 E_r2 = readtable("Lab1_1_trial1.xlsx");
 E_r3 = readtable("Lab1_2_trial1.xlsx");
 
@@ -120,30 +130,57 @@ P_disp = (i_disp .^ 2) .* R_o;
 
 %% Part F, #6
 
-v_1 = E_r1.Var2(2:end);
-v_2 = E_r2.Var2(2:end);
-v_3 = E_r3.Var2(2:end);
-
 % useful lambdas
 i = @(V,idx) (v_supply - V) ./ R_s(idx);
 R_setup = @(V,idx) V ./ i(V,idx);
 
-R1 = R_setup(v_1,1);
-R2 = R_setup(v_2,2);
-R3 = R_setup(v_3,3);
+fn = fieldnames(part_E_dat);
 
-figure 
-plot(R1,v_1,LineWidth=4);
-hold on
-plot(R2,v_2,LineWidth=4);
-hold on
-plot(R3,v_3,LineWidth=4);
+for i=1:numel(fn)/3
+    
+    v1 = part_E_dat.(fn{3 * i - 2}).Var2(2:end);
+    v2 = part_E_dat.(fn{3 * i - 1}).Var2(2:end);
+    v3 = part_E_dat.(fn{3 * i}).Var2(2:end);
 
-title("Thermistor Voltage vs. Thermistor Resistance for Different Rs");
-xlabel("Thermistor Resistance (Ohms)");
-ylabel("Thermistor VOltage (V)");
+    maxlen = max([length(v1),length(v2),length(v3)]);
+
+    v1_pad = [v1; NaN((maxlen - length(v1)),1)];
+    v2_pad = [v2; NaN((maxlen - length(v2)),1)];
+    v3_pad = [v3; NaN((maxlen - length(v3)),1)];
+
+    R1 = R_setup(v1_pad,i).';
+    R2 = R_setup(v2_pad,i).';
+    R3 = R_setup(v3_pad,i).';
+
+    sd = std([R1; R2; R3]).';
+    av_R = mean([R1; R2; R3]).';
+    v_avg = mean([v1_pad.'; v2_pad.'; v3_pad.'],'omitmissing').';
+    sd_v = mean(std([v1_pad.'; v2_pad.'; v3_pad.']).','omitmissing');
+
+    validIndices = ~isnan(av_R) & ~isnan(v_avg);
+
+    av_R_clean = av_R(validIndices);
+    v_avg_clean = v_avg(validIndices);
+
+
+    curve1 = v_avg + sd_v/sqrt(3);
+    curve2 = v_avg - sd_v/sqrt(3);
+
+    x2 = [av_R_clean, fliplr(av_R_clean)];
+    inBetween = [curve1(1:length(x2),:), fliplr(curve2(1:length(x2),:))];
+    % fill(x2, inBetween,'g',FaceAlpha=0.5);
+    
+    % hold on
+    plot(av_R_clean,v_avg_clean,LineWidth=4);
+    
+end
+
+title("Average Thermistor Voltage vs. Thermistor Resistance for Different Rs Across 3 Trials");
+xlabel("Average Thermistor Resistance (Ohms)");
+ylabel("Average Thermistor VOltage (V)");
 
 legend("R_s = 2390 Ohms","R_s = 4760 Ohms","R_s = 1100 Ohms");
+ylim([0 10]);
 
 set(gca,'FontSize',22,'fontWeight','bold') % Set font for all other text in figure
 set(findall(gcf, 'type', 'text'), 'FontSize', 22, 'fontWeight', 'bold');
