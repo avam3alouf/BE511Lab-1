@@ -155,7 +155,7 @@ for i=1:numel(fn)/3
     sd = std([R1; R2; R3]).';
     av_R = mean([R1; R2; R3]).';
     v_avg = mean([v1_pad.'; v2_pad.'; v3_pad.'],'omitmissing').';
-    sd_v = mean(std([v1_pad.'; v2_pad.'; v3_pad.']).','omitmissing');
+    sd_v = std([v1_pad.'; v2_pad.'; v3_pad.']).';
 
     validIndices = ~isnan(av_R) & ~isnan(v_avg);
 
@@ -168,9 +168,9 @@ for i=1:numel(fn)/3
 
     x2 = [av_R_clean, fliplr(av_R_clean)];
     inBetween = [curve1(1:length(x2),:), fliplr(curve2(1:length(x2),:))];
-    % fill(x2, inBetween,'g',FaceAlpha=0.5);
+     % fill(x2, inBetween,'g',FaceAlpha=0.5);
     
-    % hold on
+    hold on
     plot(av_R_clean,v_avg_clean,LineWidth=4);
     
 end
